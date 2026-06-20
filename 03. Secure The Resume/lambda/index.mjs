@@ -38,8 +38,8 @@ export const handler = async (event) => {
   }
 
 
-  const s3ObjectKey = "*";
-  const url = `${cloudfrontDistributionDomain}/${s3ObjectKey}`;
+  const key = "*"; // what can be accessed, in this case all files in the distribution
+  const url = `${cloudfrontDistributionDomain}/${key}`;
   const dateLessThan = Math.floor((Date.now() + intervalToAddInMilliseconds) / 1000);
 
 
