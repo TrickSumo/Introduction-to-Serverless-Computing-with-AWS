@@ -66,7 +66,7 @@
       spinnerEl.classList.remove("hidden");
       messageEl.textContent = "Authenticating…";
 
-      fetch("/api/signedCookies?pass=" + encodeURIComponent(pass), {
+      fetch("/api/auth/getsignedCookies?pass=" + encodeURIComponent(pass), {
         method: "GET",
         credentials: "include"
       })
