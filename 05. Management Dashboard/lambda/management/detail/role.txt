@@ -1,0 +1,17 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ReadResumeItem",
+            "Effect": "Allow",
+            "Action": "dynamodb:GetItem",
+            "Resource": "arn:aws:dynamodb:<REGION>:<ACCOUNT_ID>:table/<RESUME_TABLE_NAME>"
+        },
+        {
+            "Sid": "CheckResumeFileExists",
+            "Effect": "Allow",
+            "Action": "s3:GetObject",
+            "Resource": "arn:aws:s3:::<BUCKET_NAME>/media/*"
+        }
+    ]
+}
