@@ -1,4 +1,5 @@
 import { useAuth } from "react-oidc-context";
+import Resume from "./Resume";
 
 function App() {
   const auth = useAuth();
@@ -27,6 +28,7 @@ function App() {
         <pre> Refresh Token: {auth.user?.refresh_token} </pre>
 
         <button onClick={() => auth.removeUser()}>Sign out</button>
+        <Resume/>
       </div>
     );
   }

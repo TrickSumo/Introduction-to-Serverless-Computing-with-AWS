@@ -109,3 +109,100 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ---- Resume dashboard ---- */
+.resume {
+  max-width: 520px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  text-align: left;
+}
+
+.resume h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  color: var(--text-h);
+}
+
+.resume-status {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--accent-border);
+  background: var(--accent-bg);
+}
+
+.resume-status--muted {
+  border: 1px dashed var(--border);
+  background: var(--social-bg);
+  color: var(--text);
+}
+
+.resume-badge {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.resume-views {
+  color: var(--text-h);
+}
+
+.resume-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.resume-hint {
+  width: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.resume-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.resume-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.resume-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resume-error {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  margin-bottom: 1rem;
+}
+
+.resume-ok {
+  color: var(--accent);
+}
