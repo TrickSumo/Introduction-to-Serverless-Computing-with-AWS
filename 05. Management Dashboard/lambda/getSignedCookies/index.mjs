@@ -1,80 +1,93 @@
 import { getSignedCookies } from "@aws-sdk/cloudfront-signer";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, GetCommand } from "@aws-sdk/lib-dynamodb";
 
 const privateKeyRaw = process.env.privateKey;
-const privateKey = privateKeyRaw?.replace(/\\n/g, '\n');
+const privateKey = privateKeyRaw?.replace(/\\n/g, "\n");
 
 const cloudfrontDistributionDomain = process.env.cloudfrontDistributionDomain; // https://<ID>.cloudfront.net
-const keyPairId = process.env.keyPairId; // K33...........
-const authToken = process.env.authToken; // A simple token to authenticate the request, can be any string, e.g., "mysecrettoken"
-const intervalToAddInMilliseconds = 86400 * 1000; // 24 hours in milliseconds
+const keyPairId = process.env.keyPairId;                                        // K33...........
+const TABLE_NAME = process.env.TABLE_NAME || "resume";
 
+const intervalToAddInMilliseconds = 86400 * 1000; // 24 hours
+
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+const text = (statusCode, body) => ({
+  statusCode,
+  headers: { "Content-Type": "text/plain" },
+  body,
+});
 
 export const handler = async (event) => {
-
   if (!privateKey) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'privateKey not set in environment variables' }),
-    };
+    return text(500, "privateKey not set in environment variables");
   }
 
-  // Frontend (/auth/index.html) calls /api/signedCookies?pass=<token>
+  // Visitor opens a share link -> /auth/index.html?pass=<token>&resumeId=<sub>
+  // which calls /api/auth/getSignedCookies?pass=<token>&resumeId=<sub>
   const pass = event?.queryStringParameters?.pass;
+  const resumeId = event?.queryStringParameters?.resumeId;
 
-  if (!pass) {
-    return {
-      statusCode: 400,
-      headers: { "Content-Type": "text/plain" },
-      body: "Auth token missing",
-    };
+  if (!resumeId) return text(400, "resumeId missing");
+  if (!pass) return text(400, "Auth token missing");
+
+  // The share token now lives PER USER on the resume item, not in a global
+  // env var. Project only `pass` so this read can never leak `views` or
+  // anything else to the caller.
+  const { Item } = await ddb.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { resumeId },
+      ProjectionExpression: "pass",
+    })
+  );
+
+  if (!Item || Item.pass === undefined) {
+    return text(404, "Resume not found");
   }
 
-  if (pass !== authToken) {
-    return {
-      statusCode: 401,
-      headers: { "Content-Type": "text/plain" },
-      body: "Invalid auth token",
-    };
+  if (pass !== Item.pass) {
+    return text(401, "Invalid auth token");
   }
 
-
-  const key = "*"; // what can be accessed, in this case all files in the distribution
+  // *** Must-fix #1: scope the signed cookie to THIS user's folder only. ***
+  // Even if a visitor tampers with the resumeId cookie to point at another
+  // user, CloudFront will 403 them -- their policy only covers media/<sub>/*.
+  const key = `media/${resumeId}/*`;
   const url = `${cloudfrontDistributionDomain}/${key}`;
   const dateLessThan = Math.floor((Date.now() + intervalToAddInMilliseconds) / 1000);
-
 
   const policy = {
     Statement: [
       {
-        "Resource": url,
-        Condition: {
-          DateLessThan: {
-            "AWS:EpochTime": dateLessThan,
-          },
-        },
+        Resource: url,
+        Condition: { DateLessThan: { "AWS:EpochTime": dateLessThan } },
       },
     ],
   };
-  const policyString = JSON.stringify(policy);
-
 
   const cookies = getSignedCookies({
     keyPairId,
     privateKey,
-    policy: policyString,
+    policy: JSON.stringify(policy),
   });
 
   const expires = new Date(dateLessThan * 1000).toUTCString();
+  const base = `Expires=${expires}; Path=/; Secure; SameSite=None`;
 
   return {
     statusCode: 200,
     headers: { "Content-Type": "application/json" },
     cookies: [
-      `CloudFront-Key-Pair-Id=${cookies['CloudFront-Key-Pair-Id']}; Expires=${expires}; Path=/; Secure; HttpOnly; SameSite=None;`,
-      `CloudFront-Signature=${cookies['CloudFront-Signature']}; Expires=${expires}; Path=/; Secure; HttpOnly; SameSite=None`,
-      `CloudFront-Policy=${cookies['CloudFront-Policy']}; Expires=${expires}; Path=/; Secure; HttpOnly; SameSite=None;`,
+      // CloudFront reads these -> HttpOnly so page JS can't touch them.
+      `CloudFront-Key-Pair-Id=${cookies["CloudFront-Key-Pair-Id"]}; ${base}; HttpOnly`,
+      `CloudFront-Signature=${cookies["CloudFront-Signature"]}; ${base}; HttpOnly`,
+      `CloudFront-Policy=${cookies["CloudFront-Policy"]}; ${base}; HttpOnly`,
+      // The page JS reads this to know which resume to load -> NOT HttpOnly.
+      // It's only a pointer; the signed cookies above are the real gate.
+      `resumeId=${resumeId}; ${base}`,
     ],
-    body: JSON.stringify(cookies),
+    body: JSON.stringify({ resumeId }),
   };
-
 };
