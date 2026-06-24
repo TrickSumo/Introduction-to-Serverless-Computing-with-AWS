@@ -32,9 +32,6 @@ export const handler = async (event) => {
   if (!resumeId) return text(400, "resumeId missing");
   if (!pass) return text(400, "Auth token missing");
 
-  // The share token now lives PER USER on the resume item, not in a global
-  // env var. Project only `pass` so this read can never leak `views` or
-  // anything else to the caller.
   const { Item } = await ddb.send(
     new GetCommand({
       TableName: TABLE_NAME,
@@ -51,7 +48,6 @@ export const handler = async (event) => {
     return text(401, "Invalid auth token");
   }
 
-  // *** Must-fix #1: scope the signed cookie to THIS user's folder only. ***
   // Even if a visitor tampers with the resumeId cookie to point at another
   // user, CloudFront will 403 them -- their policy only covers media/<sub>/*.
   const key = `media/${resumeId}/*`;

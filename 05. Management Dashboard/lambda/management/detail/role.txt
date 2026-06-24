@@ -12,6 +12,12 @@
             "Effect": "Allow",
             "Action": "s3:GetObject",
             "Resource": "arn:aws:s3:::<BUCKET_NAME>/media/*"
+        },
+        {
+            "Sid": "ListBucketSoMissingFileIs404Not403",
+            "Effect": "Allow",
+            "Action": "s3:ListBucket",
+            "Resource": "arn:aws:s3:::<BUCKET_NAME>"
         }
     ]
 }

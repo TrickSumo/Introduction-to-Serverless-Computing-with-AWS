@@ -5,16 +5,16 @@ const TABLE_NAME = process.env.TABLE_NAME || "resume";
 const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 export const handler = async (event) => {
-  // resumeId comes from the cookie set at /auth (same source as the signed
-  // cookies), so only a viewer who already authenticated can bump this
-  // counter -- not anyone hitting /api/views?resumeId=<anyone>.
-  const resumeId = getCookie(event, "resumeId");
+  // resumeId is the partition key. The authorizer already VERIFIED the signed
+  // cookie and extracted resumeId, so we trust the value it passed in context
+  // (no need to re-parse the cookie here).
+  const resumeId = event.requestContext?.authorizer?.lambda?.resumeId;
 
   if (!resumeId) {
     return {
-      statusCode: 400,
+      statusCode: 401,
       headers: { "Content-Type": "text/plain" },
-      body: "resumeId missing",
+      body: "Unauthorized",
     };
   }
 
@@ -37,16 +37,3 @@ export const handler = async (event) => {
     body: JSON.stringify({ views: Attributes?.views ?? 0 }),
   };
 };
-
-// HTTP API (v2) exposes cookies as an array; REST API puts them in the header.
-// Either way, CloudFront must forward the Cookie header to /api/*.
-function getCookie(event, name) {
-  const fromArray = event?.cookies?.find((c) => c.startsWith(name + "="));
-  if (fromArray) return fromArray.split("=").slice(1).join("=");
-  const header = event?.headers?.Cookie || event?.headers?.cookie || "";
-  for (const part of header.split(";")) {
-    const [k, ...v] = part.trim().split("=");
-    if (k === name) return v.join("=");
-  }
-  return undefined;
-}

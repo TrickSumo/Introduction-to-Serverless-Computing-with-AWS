@@ -1,0 +1,96 @@
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --green: #16a34a;
+  --red: #dc2626;
+
+  font: 16px/145% system-ui, "Segoe UI", Roboto, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --green: #4ade80;
+    --red: #f87171;
+  }
+}
+
+body { margin: 0; }
+
+.auth {
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth h3 {
+  margin: 1.5rem 0 0.4rem;
+  font-size: 0.9rem;
+  color: var(--text-h);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.badge--in  { color: var(--green); border: 1px solid var(--green); }
+.badge--out { color: var(--red);   border: 1px solid var(--red); }
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.token,
+.claims {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 6px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-x: auto;
+}
+
+.auth-error {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}

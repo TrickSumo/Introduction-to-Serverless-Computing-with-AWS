@@ -79,7 +79,7 @@
       var qs = "pass=" + encodeURIComponent(pass) +
                "&resumeId=" + encodeURIComponent(resumeId);
 
-      fetch("/api/auth/getSignedCookies?" + qs, {
+      fetch("/api/auth/signedCookies?" + qs, {
         method: "GET",
         credentials: "include"
       })

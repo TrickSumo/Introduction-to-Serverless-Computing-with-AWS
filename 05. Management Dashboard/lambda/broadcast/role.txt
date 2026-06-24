@@ -1,0 +1,36 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ReadResumeStream",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:GetShardIterator",
+                "dynamodb:DescribeStream",
+                "dynamodb:GetRecords"
+            ],
+            "Resource": "arn:aws:dynamodb:<REGION>:<ACCOUNT_ID>:table/<RESUME_TABLE_NAME>/stream/*"
+        },
+        {
+            "Sid": "ListStreams",
+            "Effect": "Allow",
+            "Action": "dynamodb:ListStreams",
+            "Resource": "*"
+        },
+        {
+            "Sid": "ScanAndCleanConnections",
+            "Effect": "Allow",
+            "Action": [
+                "dynamodb:Scan",
+                "dynamodb:DeleteItem"
+            ],
+            "Resource": "arn:aws:dynamodb:<REGION>:<ACCOUNT_ID>:table/<CONNECTION_TABLE_NAME>"
+        },
+        {
+            "Sid": "PostToWebSocketConnections",
+            "Effect": "Allow",
+            "Action": "execute-api:ManageConnections",
+            "Resource": "arn:aws:execute-api:<REGION>:<ACCOUNT_ID>:<APIGW_ID>/<STAGE_NAME>/POST/@connections/*"
+        }
+    ]
+}

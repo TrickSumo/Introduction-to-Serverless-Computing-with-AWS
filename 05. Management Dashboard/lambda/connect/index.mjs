@@ -14,10 +14,10 @@ export const handler = async (event) => {
     }
 
     // $connect: remember WHICH resume this socket is watching so broadcast can
-    // push only to the right viewers. resumeId was set as a cookie during the
-    // /auth flow (before the redirect to /), so the browser already has it and
-    // sends it on the WebSocket handshake -- no query string needed.
-    const resumeId = getCookie(event, "resumeId");
+    // push only to the right viewers. The authorizer already VERIFIED the
+    // signed cookie and extracted resumeId, so we read it from context.
+    // (WebSocket authorizer context has no `.lambda` nesting, unlike HTTP API.)
+    const resumeId = event.requestContext?.authorizer?.resumeId;
 
     await ddb.send(
       new PutCommand({
@@ -31,15 +31,3 @@ export const handler = async (event) => {
     return { statusCode: 500, body: "Connection error" };
   }
 };
-
-// The WebSocket handshake is an HTTP request, so the browser attaches cookies
-// for the CloudFront domain. (CloudFront must forward the Cookie header to the
-// /wss behavior, or this comes back empty.)
-function getCookie(event, name) {
-  const header = event?.headers?.Cookie || event?.headers?.cookie || "";
-  for (const part of header.split(";")) {
-    const [k, ...v] = part.trim().split("=");
-    if (k === name) return v.join("=");
-  }
-  return undefined;
-}

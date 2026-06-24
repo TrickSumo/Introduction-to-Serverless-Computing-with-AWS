@@ -21,23 +21,30 @@ export const handler = async (event) => {
     return;
   }
 
-  // Pull the latest view-count change out of the DynamoDB Streams batch.
-  let latest = null;
+  // A single stream batch can contain view changes for MULTIPLE resumes
+  // (different users viewed at once). Keep the latest count PER resume so we
+  // don't drop everyone but the last record.
+  const latestByResume = new Map();
   for (const record of event.Records) {
     if (record.eventName === "REMOVE" || !record.dynamodb?.NewImage) continue;
     const img = unmarshall(record.dynamodb.NewImage);
     if (img.views === undefined || img.resumeId === undefined) continue;
-    latest = { resumeId: img.resumeId, views: Number(img.views) };
+    latestByResume.set(img.resumeId, Number(img.views)); // last write wins per resume
   }
 
-  if (!latest) return; // nothing relevant in this batch
+  if (latestByResume.size === 0) return; // nothing relevant in this batch
 
-  const message = JSON.stringify({ type: "views", ...latest });
+  // Scan connections ONCE, grouped by the resume each socket is watching.
+  const byResume = await getConnectionsByResume();
 
-  // *** Multi-tenant fix: only push to sockets watching THIS resume. ***
-  const connections = await getConnectionsFor(latest.resumeId);
-
-  await Promise.all(connections.map((connectionId) => send(connectionId, message)));
+  const sends = [];
+  for (const [resumeId, views] of latestByResume) {
+    const message = JSON.stringify({ type: "views", resumeId, views });
+    for (const connectionId of byResume.get(resumeId) ?? []) {
+      sends.push(send(connectionId, message));
+    }
+  }
+  await Promise.all(sends);
 };
 
 async function send(connectionId, message) {
@@ -53,10 +60,10 @@ async function send(connectionId, message) {
   }
 }
 
-async function getConnectionsFor(resumeId) {
-  // Scan + filter is fine at course scale. To scale up, add a GSI on
-  // `resumeId` and Query instead of Scan -- noted, but not needed here.
-  const ids = [];
+async function getConnectionsByResume() {
+  // Scan + group is fine at course scale. To scale up, add a GSI on
+  // `resumeId` and Query per changed resume instead -- noted, not needed here.
+  const byResume = new Map();
   let ExclusiveStartKey;
   do {
     const res = await ddb.send(
@@ -67,9 +74,11 @@ async function getConnectionsFor(resumeId) {
       })
     );
     for (const item of res.Items ?? []) {
-      if (item.resumeId === resumeId) ids.push(item.connectionId);
+      if (!item.resumeId) continue;
+      if (!byResume.has(item.resumeId)) byResume.set(item.resumeId, []);
+      byResume.get(item.resumeId).push(item.connectionId);
     }
     ExclusiveStartKey = res.LastEvaluatedKey;
   } while (ExclusiveStartKey);
-  return ids;
+  return byResume;
 }
