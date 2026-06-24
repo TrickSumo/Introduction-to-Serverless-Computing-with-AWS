@@ -1,6 +1,6 @@
 # Introduction to Serverless Computing with AWS
 
-Build a real serverless app step by step — a resume site that grows from a static page into a
+Build a real serverless app step by step. Create a resume site that grows from a static page into a
 multi-tenant product. Each module adds one AWS service, introduced **because the last step needs it**.
 
 | # | Module | Adds | Services |
