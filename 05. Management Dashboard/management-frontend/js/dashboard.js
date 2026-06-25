@@ -119,7 +119,7 @@ export async function renderDashboard(root) {
 
       $("status").innerHTML = uploaded
         ? `<div class="resume-status">
-             <span class="resume-badge">● Live</span>
+             <span class="resume-badge">Live</span>
              <span class="resume-views">👁 ${d.views ?? 0} views</span>
            </div>`
         : `<div class="resume-status resume-status--muted">
